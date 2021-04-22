@@ -131,7 +131,7 @@ class Api
             $this->securedStorage = $storage . '/Api';
         }
         try {
-            $this->soap = new \SoapClient($this->wsdl);
+            $this->soap = new \SoapClient($this->wsdl,array('trace' => 1,));
         } catch (\Exception $e) {
             throw new \Exception('Failed to build soap client');
         }
@@ -344,7 +344,7 @@ class Api
         }
 
         /** @var Order $order */
-        foreach ($packages AS $package) {
+        foreach (array_values($packages) AS $i => $package) {
             if (!$package instanceof IPackage) {
                 throw new \Exception('$packages must contain only instances of IPackage class');
             }
@@ -472,7 +472,11 @@ class Api
                 'PackageServices' => $packageServices,
                 'Flags' => $flags,
                 'PalletInfo' => $palletInfo,
-                'WeightedPackageInfoIn' => $weightedPackageInfo
+                'WeightedPackageInfoIn' => $weightedPackageInfo,
+                'PackageSet' => [
+                    'PackageInSetNr' => $i+1,
+                    'PackagesInSet' => count($packages)
+                    ]
             ];
         }
 
@@ -485,7 +489,7 @@ class Api
                 'MyApiPackageIn' => $packagesProcessed
             ]
         ]);
-
+        \Tracy\Debugger::log($this->soap->__getLastRequest());
         return isset($result->CreatePackagesResult->ResultData->ItemResult)
             ? $result->CreatePackagesResult->ResultData->ItemResult
             : [];
